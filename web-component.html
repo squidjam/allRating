@@ -2,36 +2,90 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>allRating web component</title>
+<title>allRating web component demo</title>
 <script type="module" src="js/all-rating.js"></script>
 <style>
-body { font: 1rem/1.6 system-ui, sans-serif; margin: 3rem auto; padding: 0 1rem; max-width: 48rem; color: #202530; }
-h1 { line-height: 1.15; } section { margin: 2rem 0; } label { display: block; font-weight: 600; }
-pre { padding: 1rem; background: #f3f4f6; overflow: auto; } button { font: inherit; margin: .5rem; }
+:root { color-scheme: light dark; }
+body { font: 1rem/1.6 system-ui, sans-serif; margin: 0 auto; padding: 2rem 1.25rem 5rem; max-width: 52rem; }
+header { border-bottom: 1px solid currentColor; padding-bottom: 1rem; }
+h1 { line-height: 1.15; font-size: clamp(1.6rem, 4vw, 2.4rem); margin: 0 0 .5rem; }
+h2 { font-size: 1.15rem; margin: 2rem 0 .25rem; }
+p.lede { margin: 0; opacity: .8; }
+section { margin: 1.75rem 0; display: grid; gap: .5rem; }
+label { font-weight: 600; }
+all-rating { --rating-active: #b8860b; --rating-inactive: #9aa0a6; }
+pre { padding: 1rem; background: rgba(127,127,127,.14); border-radius: .5rem; overflow: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid rgba(127,127,127,.3); }
+code { font-size: .95em; }
+.row { display: flex; flex-wrap: wrap; gap: .5rem; }
+form { margin: 0; }
+footer { margin-top: 3rem; opacity: .8; font-size: .95rem; }
 </style>
-<h1>allRating, without jQuery</h1>
-<p>A native, form-associated web component. Use the mouse, touch, or keyboard. Arrow keys choose a rating; Home/End choose the first/last; Delete clears.</p>
-<pre>&lt;script type="module" src="js/all-rating.js"&gt;&lt;/script&gt;
-&lt;all-rating name="rating" value="3" aria-label="Your rating"&gt;&lt;/all-rating&gt;</pre>
+<header>
+  <h1>allRating web component</h1>
+  <p class="lede">A native, form-associated rating control. No jQuery, no images, no build step. Try each control with a mouse or with the keyboard: arrow keys select, Home and End jump, Delete clears.</p>
+</header>
 <form id="demo">
-<section><label for="stars">Stars</label><all-rating id="stars" name="stars" value="3" required labels='["Not rated","Below average","Average","Above average","Awesome","Epic"]'></all-rating></section>
-<section><label for="bar">Bars</label><all-rating id="bar" name="bar" theme="bar" value="2"></all-rating></section>
-<section><label for="tiny">Tiny stars</label><all-rating id="tiny" name="tiny" theme="tinystar" max="10" value="7"></all-rating></section>
-<section><label for="medals">Medals</label><all-rating id="medals" name="medals" theme="medal" value="4"></all-rating></section>
-<section><label for="disabled">Disabled</label><all-rating id="disabled" name="disabled" value="3" disabled></all-rating></section>
-<section><label for="readonly">Read only (still submitted)</label><all-rating id="readonly" name="readonly" value="4" readonly></all-rating></section>
-<button>Show form data</button><button type="reset">Reset defaults</button>
+  <section>
+    <label for="stars">Stars, 5 points, required</label>
+    <all-rating id="stars" name="stars" value="3" required labels='["Not rated","Below average","Average","Above average","Awesome","Epic"]'></all-rating>
+  </section>
+  <section>
+    <label for="bar">Bars</label>
+    <all-rating id="bar" name="bar" theme="bar" value="2"></all-rating>
+  </section>
+  <section>
+    <label for="tiny">Tiny stars, 10 points</label>
+    <all-rating id="tiny" name="tiny" theme="tinystar" max="10" value="7"></all-rating>
+  </section>
+  <section>
+    <label for="medals">Medals</label>
+    <all-rating id="medals" name="medals" theme="medal" value="4"></all-rating>
+  </section>
+  <section>
+    <label for="disabled">Disabled</label>
+    <all-rating id="disabled" name="disabled" value="3" disabled></all-rating>
+  </section>
+  <section>
+    <label for="readonly">Read only, still submitted</label>
+    <all-rating id="readonly" name="readonly" value="4" readonly></all-rating>
+  </section>
+  <div class="row">
+    <button type="submit">Submit form</button>
+    <button type="reset">Reset to defaults</button>
+  </div>
 </form>
-<pre id="result" role="status">Choose ratings, then submit.</pre>
-<p>The original jQuery demo remains at <a href="index.html">index.html</a>.</p>
+<section>
+  <h2>FormData</h2>
+  <pre id="result" role="status">Choose ratings, then submit.</pre>
+</section>
+<section>
+  <h2>Tag reference</h2>
+  <table>
+    <tr><th>Attribute</th><th>Meaning</th></tr>
+    <tr><td><code>value</code></td><td>Default rating; reset restores it</td></tr>
+    <tr><td><code>max</code></td><td>Scale size, 1&ndash;100 (default 5)</td></tr>
+    <tr><td><code>name</code></td><td>Key used in form submission</td></tr>
+    <tr><td><code>theme</code></td><td>star, tinystar, bar, or medal</td></tr>
+    <tr><td><code>required</code></td><td>Rejects a zero rating on submit</td></tr>
+    <tr><td><code>disabled</code>, <code>readonly</code></td><td>Block editing; disabled also blocks submission</td></tr>
+    <tr><td><code>labels</code></td><td>JSON array of text for each rating, index 0 included</td></tr>
+    <tr><td><code>aria-label</code></td><td>Accessible name when no visible label is associated</td></tr>
+  </table>
+</section>
+<footer>
+  <p>User input fires <code>input</code> then <code>change</code> events. <a href="index.html">The original jQuery demo</a> is still here, and the <a href="README.md">README</a> covers the API and migration notes.</p>
+</footer>
 <script type="module">
-const form = document.querySelector('form');
+const form = document.querySelector('#demo');
+const result = document.querySelector('#result');
 form.addEventListener('submit', event => {
   event.preventDefault();
-  document.querySelector('#result').textContent = JSON.stringify(Object.fromEntries(new FormData(form)), null, 2);
+  result.textContent = JSON.stringify(Object.fromEntries(new FormData(form)), null, 2);
 });
 form.addEventListener('change', event => {
-  document.querySelector('#result').textContent = event.target.name + ': ' + event.target.value;
+  result.textContent = (event.target.name || 'rating') + ': ' + event.target.value;
 });
 </script>
 </html>

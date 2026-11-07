@@ -5,9 +5,17 @@
  */
 import { normalizeMax, normalizeValue } from './rating-scale.js';
 
-const style = ` 
+/** Inline SVG mask sources: keep the icons crisp and avoid image requests. */
+const SYMBOL_SVG = {
+  star: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path d=\"M12 1.6l3.3 6.7 7.4 1.1-5.4 5.2 1.3 7.4L12 18.5l-6.6 3.5 1.3-7.4L1.3 9.4l7.4-1.1z\"/></svg>",
+  medal: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path d=\"M7 1.5L10 9 8 12 5 4.5zm10 0L14 9l2 3 3-7.5zM12 9a6 6 0 100 12 6 6 0 000-12zm0 2.6l1.4 2.7 3 .5-2.2 2.1.5 3-2.7-1.4-2.7 1.4.5-3-2.2-2.1 3-.5z\"/></svg>"
+};
+const symbolUrl = svg => "url('data:image/svg+xml," + encodeURIComponent(svg) + "')";
+
+const style = `
   :host { display: inline-block; --rating-active: #a66b00; --rating-inactive: #666;
-    --rating-size: 2rem; --rating-gap: .15rem; }
+    --rating-size: 2rem; --rating-gap: .15rem;
+    --symbol-star: ${symbolUrl(SYMBOL_SVG.star)}; --symbol-medal: ${symbolUrl(SYMBOL_SVG.medal)}; }
   :host([hidden]) { display: none; }
   .choices { display: inline-flex; gap: var(--rating-gap); align-items: center; }
   button { font: inherit; color: var(--rating-inactive); background: transparent;
@@ -17,21 +25,32 @@ const style = `
   [data-active] { color: var(--rating-active); }
   button:disabled, [aria-readonly=true] button { cursor: default; }
   [aria-disabled=true] { opacity: .5; }
-  :host([theme=tinystar]) [role=radio] { font-size: 1rem; }
-  :host([theme=bar]) .symbol { display: inline-block; width: .7rem; height: 1.3rem;
-    background: currentColor; }
+  .symbol { display: block; background: currentColor;
+    mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat;
+    mask-position: center; -webkit-mask-position: center;
+    mask-size: contain; -webkit-mask-size: contain; }
+  :host(:not([theme=tinystar])) [role=radio] .symbol { width: var(--rating-size); height: var(--rating-size); }
+  [role=radio] .symbol { mask-image: var(--symbol-star); -webkit-mask-image: var(--symbol-star); }
+  :host([theme=medal]) [role=radio] .symbol { mask-image: var(--symbol-medal); -webkit-mask-image: var(--symbol-medal); }
+  :host([theme=tinystar]) [role=radio] .symbol { width: 1rem; height: 1rem; }
+  :host([theme=bar]) [role=radio] .symbol { width: .7rem; height: 1.3rem;
+    mask-image: none; -webkit-mask-image: none; }
+  .clear { margin-left: .35rem; color: var(--rating-inactive); text-decoration: underline; }
   .status { display: block; font: .85rem/1.5 system-ui, sans-serif; }
   @media (forced-colors: active) {
     [data-active] { color: Highlight; }
     [aria-checked=true] { outline: 2px solid Highlight; }
+    [role=radio] .symbol { background: CanvasText; }
+    [data-active] .symbol { background: Highlight; }
   }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 `;
 
 /** A form-associated, dependency-free integer rating control. */
 export class AllRating extends HTMLElement {
   static formAssociated = true;
   static observedAttributes = ['value', 'max', 'name', 'disabled', 'readonly',
-    'required', 'theme', 'aria-label', 'labels'];
+    'required', 'theme', 'labels', 'group'];
 
   constructor() {
     super();
@@ -73,6 +92,7 @@ export class AllRating extends HTMLElement {
   attributeChangedCallback(name) {
     if (name === 'value' && !this._dirty) this._value = normalizeValue(this.defaultValue, this.max);
     if (name === 'max') this._value = normalizeValue(this._value, this.max);
+    if (name === 'group' && this.group) this._syncGroup(this.group);
     this._preview = null;
     if (name === 'max' || !this.shadowRoot.firstChild) this._render();
     else this._update();
@@ -91,6 +111,9 @@ export class AllRating extends HTMLElement {
   set max(value) { this.setAttribute('max', String(value)); }
   get name() { return this.getAttribute('name') || ''; }
   set name(value) { this.setAttribute('name', value); }
+  /** Optional shared name: controls with the same group behave as one radio group. */
+  get group() { return this.getAttribute('group') || ''; }
+  set group(value) { this.setAttribute('group', value); }
   get disabled() { return this.hasAttribute('disabled'); }
   set disabled(value) { this.toggleAttribute('disabled', Boolean(value)); }
   get readOnly() { return this.hasAttribute('readonly'); }
@@ -120,7 +143,7 @@ export class AllRating extends HTMLElement {
 
   _render() {
     // Only static markup is inserted as HTML; labels are assigned via textContent.
-    this.shadowRoot.innerHTML = '<style></style><div class="choices" part="control" role="radiogroup"></div><span class="status" part="label"></span>';
+    this.shadowRoot.innerHTML = '<style></style><div class="choices" part="control" role="radiogroup"></div><button type="button" class="clear" data-value="0" part="clear">Clear</button><span class="status" part="label"></span>';
     this.shadowRoot.querySelector('style').textContent = style;
     const group = this.shadowRoot.querySelector('.choices');
     for (let value = 1; value <= this.max; value++) {
@@ -131,27 +154,45 @@ export class AllRating extends HTMLElement {
       button.innerHTML = '<span class="symbol" aria-hidden="true"></span>';
       group.append(button);
     }
-    // Clear is outside the radiogroup so its button role is not a radio child.
-    const clear = document.createElement('button');
-    clear.type = 'button'; clear.dataset.value = '0'; clear.textContent = 'Clear';
-    clear.setAttribute('part', 'clear');
-    group.after(clear);
     this._update();
   }
 
   _label(value) {
     let labels;
-    try { labels = JSON.parse(this.getAttribute('labels') || '[]'); } catch { labels = []; }
+    const raw = this.getAttribute('labels');
+    try { labels = raw ? JSON.parse(raw) : []; } catch { labels = []; }
     return (Array.isArray(labels) && typeof labels[value] === 'string')
       ? labels[value] : value === 0 ? 'Not rated' : value + ' of ' + this.max;
+  }
+
+  _name() {
+    return this.getAttribute('aria-label') ||
+      Array.from(this._internals.labels || [], label => label.textContent.trim())
+        .filter(Boolean).join(' ') || 'Rating';
+  }
+
+  _peers() {
+    if (!this.group) return [];
+    const scope = (this.getRootNode() || this);
+    return Array.from(scope.querySelectorAll('all-rating'))
+      .filter(peer => peer !== this && peer.group === this.group);
+  }
+
+  /** Mirror a change to every control sharing this group, without echoing events. */
+  _syncGroup(group) {
+    for (const peer of this._peers()) {
+      peer.value = this.value;
+      peer.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      peer.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+    }
   }
 
   _update() {
     const group = this.shadowRoot.querySelector('.choices');
     if (!group) return;
     const disabled = this._isDisabled;
-    group.setAttribute('aria-label', this.getAttribute('aria-label') ||
-      Array.from(this._internals.labels || [], label => label.textContent.trim()).join(' ') || 'Rating');
+    // The radiogroup carries the name, the buttons carry only their value.
+    group.setAttribute('aria-label', this._name());
     group.setAttribute('aria-disabled', String(disabled));
     group.setAttribute('aria-readonly', String(this.readOnly));
     group.setAttribute('aria-required', String(this.required));
@@ -164,10 +205,10 @@ export class AllRating extends HTMLElement {
       button.setAttribute('aria-label', this._label(value));
       button.setAttribute('part', value <= active ? 'rating active' : 'rating');
       button.toggleAttribute('data-active', value <= active);
-      button.querySelector('.symbol').textContent = this.getAttribute('theme') === 'medal' ? '●' : '★';
     }
-    const clear = this.shadowRoot.querySelector('[data-value="0"]');
+    const clear = this.shadowRoot.querySelector('.clear');
     clear.disabled = !this._editable;
+    clear.setAttribute('aria-label', 'Clear rating, currently ' + this._label(this.value));
     this.shadowRoot.querySelector('.status').textContent = this._label(active);
     this._internals.setFormValue(disabled ? null : String(this.value), String(this.value));
     const missing = this.required && !this.readOnly && this.value === 0;
@@ -178,6 +219,7 @@ export class AllRating extends HTMLElement {
   _commit(value) {
     if (!this._editable || value === this.value) return;
     this.value = value;
+    if (this.group) this._syncGroup(this.group);
     this.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
     this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
   }

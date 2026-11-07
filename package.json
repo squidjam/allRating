@@ -1,0 +1,19 @@
+{
+  "name": "all-rating",
+  "version": "1.0.0",
+  "description": "Dependency-free, form-associated rating web component, rewritten from the allRating jQuery plugin.",
+  "keywords": ["web-component", "custom-element", "rating", "form-associated", "stars"],
+  "license": "MIT",
+  "type": "module",
+  "main": "js/all-rating.js",
+  "exports": { ".": "./js/all-rating.js", "./rating-scale.js": "./js/rating-scale.js" },
+  "files": ["js/all-rating.js", "js/rating-scale.js", "README.md", "LICENSE.web-component"],
+  "scripts": {
+    "test": "node --test tests/rating-scale.test.mjs",
+    "serve": "python3 -m http.server 8000",
+    "check": "node --check js/all-rating.js && node --check js/rating-scale.js"
+  },
+  "repository": { "type": "git", "url": "git+https://github.com/squidjam/allRating.git" },
+  "homepage": "https://squidjam.github.io/allRating/web-component.html",
+  "engines": { "node": ">=18" }
+}

@@ -35,10 +35,29 @@ await test('click emits input then change; setters are silent', () => {
 });
 await test('clear, required validation, and form reset', () => {
   const {form, rating, root} = setup('required');
-  root.querySelector('[data-value="0"]').click();
+  root.querySelector('.clear').click();
   assert(rating.value === 0 && rating.validity.valueMissing, 'required empty');
   form.reset();
   assert(rating.value === 3 && rating.validity.valid, 'reset');
+});
+await test('groups for one name share the form value and change together', () => {
+  fixture.innerHTML = '<form><fieldset><legend>Two copies</legend><all-rating name="score" value="2"></all-rating><all-rating name="score" value="4"></all-rating></fieldset></form>';
+  const form = fixture.querySelector('form');
+  const [first, second] = fixture.querySelectorAll('all-rating');
+  assert(new FormData(form).getAll('score').length === 2, 'two entries before grouping');
+  first.group = 'score'; second.group = 'score';
+  assert(first.value === 2 && second.value === 4, 'each starts at its own default');
+  second.shadowRoot.querySelector('[data-value="5"]').click();
+  assert(first.value === 5 && new FormData(form).getAll('score').length === 1, 'grouped radios sync and submit once');
+});
+await test('icons are mask sources, not emoji fallbacks', () => {
+  const {rating, root} = setup();
+  const symbol = root.querySelector('[role=radio] .symbol');
+  assert(symbol.getAttribute('aria-hidden') === 'true', 'icons hidden from AT');
+  assert(root.querySelector('.choices').getAttribute('aria-label').length > 0, 'group keeps the name');
+  rating.setAttribute('aria-label', 'Explicit name');
+  assert(root.querySelector('.choices').getAttribute('aria-label') === 'Explicit name', 'explicit name wins');
+  assert(root.querySelector('.clear').getAttribute('aria-label').startsWith('Clear rating'), 'clear named');
 });
 await test('disabled and fieldset disabled omit submission', () => {
   const {form, rating, root} = setup('disabled');
@@ -71,6 +90,8 @@ await test('max changes, safe custom labels, restore and reconnection', () => {
   assert(rating.value === 2 && root.querySelectorAll('[role=radio]').length === 2, 'clamp max');
   rating.setAttribute('labels', JSON.stringify(['None', '<img src=x>', 'Good']));
   assert(!root.querySelector('img'), 'labels are text');
+  rating.setAttribute('labels', '{not json');
+  assert(root.querySelector('[data-value="1"]').getAttribute('aria-label') === '1 of 2', 'malformed labels fall back');
   rating.formStateRestoreCallback('1'); assert(rating.value === 1, 'restore');
   rating.remove(); fixture.append(rating); assert(rating.value === 1, 'reconnect');
 });
