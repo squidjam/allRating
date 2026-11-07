@@ -2,12 +2,12 @@
 
 Two implementations live here:
 
-- **all-rating**, a dependency-free, form-associated web component (version 1.0.0). The API, styling and migration notes are below, and the [live demo](web-component.html) shows every theme.
-- **The original allRating jQuery plugin**, unchanged in js/jquery.allRating.js with its demo in index.html.
+- **all-rating**, a dependency-free, form-associated web component (version 1.0.0). The API, styling and migration notes are below, and the [live demo](index.html) on the home page shows every theme.
+- **The original allRating jQuery plugin**, unchanged in js/jquery.allRating.js with its demo in jquery-demo.html.
 
 ## Usage
 
-Serve the repository over HTTP (for example `npm run serve`, or `python3 -m http.server 8000`), then load the ES module:
+Serve the repository over HTTP (for example `npm run serve`, or `python3 -m http.server 8000`), then load the ES module. Because the component is an ES module, opening the page from the filesystem will not work — the demo needs an HTTP server:
 
 ```html
 <script type="module" src="js/all-rating.js"></script>
@@ -68,7 +68,7 @@ That runs the dependency-free normalization tests in tests/rating-scale.test.mjs
 ## Project files
 
 - `js/all-rating.js` and `js/rating-scale.js`: the component.
-- `web-component.html`: the component demo; `index.html`: the original jQuery demo.
+- `index.html`: the component demo, served as the site home page; `jquery-demo.html`: the original jQuery demo (unchanged, including its insecure asset URLs); `web-component.html`: a redirect to the home page.
 - `tests/`: Node and browser tests.
 - `CHANGELOG.md`, `LICENSE.web-component`, `package.json`.
 
