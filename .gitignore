@@ -1,1 +1,4 @@
-PLACEHOLDER_GITIGNORE
+node_modules/
+.DS_Store
+*.log
+scratch/

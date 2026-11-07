@@ -1,1 +1,101 @@
-PLACEHOLDER_BROWSER
+<!doctype html><html lang="en"><meta charset="utf-8"><title>allRating browser tests</title>
+<h1>allRating browser tests</h1><pre id="results"></pre><div id="fixture"></div>
+<script type="module">
+import '../js/all-rating.js';
+const results = document.querySelector('#results');
+const fixture = document.querySelector('#fixture');
+let passed = 0, failed = 0;
+function assert(value, message) { if (!value) throw new Error(message); }
+async function test(name, run) {
+  fixture.replaceChildren();
+  try { await run(); passed++; results.textContent += 'PASS ' + name + '\n'; }
+  catch (error) { failed++; results.textContent += 'FAIL ' + name + ': ' + error.message + '\n'; }
+}
+function setup(attributes = '') {
+  fixture.innerHTML = '<form><label for="rating">Your rating</label><all-rating id="rating" name="rating" value="3" ' + attributes + '></all-rating></form>';
+  const form = fixture.querySelector('form');
+  const rating = fixture.querySelector('all-rating');
+  return {form, rating, root: rating.shadowRoot};
+}
+await test('initial value, label and form data', () => {
+  const {form, rating, root} = setup();
+  assert(rating.value === 3, 'initial value');
+  assert(new FormData(form).get('rating') === '3', 'form value');
+  assert(root.querySelector('[role=radiogroup]').getAttribute('aria-label') === 'Your rating', 'label association');
+  assert(root.querySelectorAll('[aria-checked=true]').length === 1, 'one checked radio');
+});
+await test('click emits input then change; setters are silent', () => {
+  const {rating, root} = setup();
+  const events = [];
+  for (const type of ['input','change']) rating.addEventListener(type, () => events.push(type));
+  root.querySelector('[data-value="5"]').click();
+  assert(rating.value === 5 && events.join(',') === 'input,change', 'user events');
+  rating.value = 2;
+  assert(events.length === 2, 'setter must not emit');
+});
+await test('clear, required validation, and form reset', () => {
+  const {form, rating, root} = setup('required');
+  root.querySelector('.clear').click();
+  assert(rating.value === 0 && rating.validity.valueMissing, 'required empty');
+  form.reset();
+  assert(rating.value === 3 && rating.validity.valid, 'reset');
+});
+await test('groups for one name share the form value and change together', () => {
+  fixture.innerHTML = '<form><fieldset><legend>Two copies</legend><all-rating name="score" value="2"></all-rating><all-rating name="score" value="4"></all-rating></fieldset></form>';
+  const form = fixture.querySelector('form');
+  const [first, second] = fixture.querySelectorAll('all-rating');
+  assert(new FormData(form).getAll('score').length === 2, 'two entries before grouping');
+  first.group = 'score'; second.group = 'score';
+  assert(first.value === 2 && second.value === 4, 'each starts at its own default');
+  second.shadowRoot.querySelector('[data-value="5"]').click();
+  assert(first.value === 5 && new FormData(form).getAll('score').length === 1, 'grouped radios sync and submit once');
+});
+await test('icons are mask sources, not emoji fallbacks', () => {
+  const {rating, root} = setup();
+  const symbol = root.querySelector('[role=radio] .symbol');
+  assert(symbol.getAttribute('aria-hidden') === 'true', 'icons hidden from AT');
+  assert(root.querySelector('.choices').getAttribute('aria-label').length > 0, 'group keeps the name');
+  rating.setAttribute('aria-label', 'Explicit name');
+  assert(root.querySelector('.choices').getAttribute('aria-label') === 'Explicit name', 'explicit name wins');
+  assert(root.querySelector('.clear').getAttribute('aria-label').startsWith('Clear rating'), 'clear named');
+});
+await test('disabled and fieldset disabled omit submission', () => {
+  const {form, rating, root} = setup('disabled');
+  root.querySelector('[data-value="5"]').click();
+  assert(rating.value === 3 && !new FormData(form).has('rating'), 'disabled');
+  rating.disabled = false;
+  const fieldset = document.createElement('fieldset');
+  form.append(fieldset); fieldset.append(rating); fieldset.disabled = true;
+  assert(!new FormData(form).has('rating'), 'fieldset disabled');
+  fieldset.disabled = false;
+  assert(new FormData(form).get('rating') === '3', 'fieldset reenabled');
+});
+await test('readonly cannot change but is submitted', () => {
+  const {form, rating, root} = setup('readonly');
+  root.querySelector('[data-value="5"]').click();
+  assert(rating.value === 3 && new FormData(form).get('rating') === '3', 'readonly');
+});
+await test('keyboard selection and clear', () => {
+  const {rating, root} = setup();
+  const key = value => root.querySelector('[role=radio][tabindex="0"]').dispatchEvent(new KeyboardEvent('keydown', {key:value, bubbles:true, cancelable:true}));
+  key('ArrowRight'); assert(rating.value === 4, 'right');
+  key('End'); assert(rating.value === 5, 'end');
+  key('Home'); assert(rating.value === 1, 'home');
+  key('ArrowLeft'); assert(rating.value === 5, 'wrap');
+  key('Delete'); assert(rating.value === 0, 'clear');
+});
+await test('max changes, safe custom labels, restore and reconnection', () => {
+  const {rating, root} = setup();
+  rating.max = 2;
+  assert(rating.value === 2 && root.querySelectorAll('[role=radio]').length === 2, 'clamp max');
+  rating.setAttribute('labels', JSON.stringify(['None', '<img src=x>', 'Good']));
+  assert(!root.querySelector('img'), 'labels are text');
+  rating.setAttribute('labels', '{not json');
+  assert(root.querySelector('[data-value="1"]').getAttribute('aria-label') === '1 of 2', 'malformed labels fall back');
+  rating.formStateRestoreCallback('1'); assert(rating.value === 1, 'restore');
+  rating.remove(); fixture.append(rating); assert(rating.value === 1, 'reconnect');
+});
+results.textContent += '\n' + passed + ' passed; ' + failed + ' failed.\n';
+document.title = failed ? 'FAIL allRating' : 'PASS allRating';
+window.testResults = {passed, failed};
+</script></html>
