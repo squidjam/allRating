@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>allRating web component</title>
+<script type="module" src="js/all-rating.js"></script>
+<style>
+body { font: 1rem/1.6 system-ui, sans-serif; margin: 3rem auto; padding: 0 1rem; max-width: 48rem; color: #202530; }
+h1 { line-height: 1.15; } section { margin: 2rem 0; } label { display: block; font-weight: 600; }
+pre { padding: 1rem; background: #f3f4f6; overflow: auto; } button { font: inherit; margin: .5rem; }
+</style>
+<h1>allRating, without jQuery</h1>
+<p>A native, form-associated web component. Use the mouse, touch, or keyboard. Arrow keys choose a rating; Home/End choose the first/last; Delete clears.</p>
+<pre>&lt;script type="module" src="js/all-rating.js"&gt;&lt;/script&gt;
+&lt;all-rating name="rating" value="3" aria-label="Your rating"&gt;&lt;/all-rating&gt;</pre>
+<form id="demo">
+<section><label for="stars">Stars</label><all-rating id="stars" name="stars" value="3" required labels='["Not rated","Below average","Average","Above average","Awesome","Epic"]'></all-rating></section>
+<section><label for="bar">Bars</label><all-rating id="bar" name="bar" theme="bar" value="2"></all-rating></section>
+<section><label for="tiny">Tiny stars</label><all-rating id="tiny" name="tiny" theme="tinystar" max="10" value="7"></all-rating></section>
+<section><label for="medals">Medals</label><all-rating id="medals" name="medals" theme="medal" value="4"></all-rating></section>
+<section><label for="disabled">Disabled</label><all-rating id="disabled" name="disabled" value="3" disabled></all-rating></section>
+<section><label for="readonly">Read only (still submitted)</label><all-rating id="readonly" name="readonly" value="4" readonly></all-rating></section>
+<button>Show form data</button><button type="reset">Reset defaults</button>
+</form>
+<pre id="result" role="status">Choose ratings, then submit.</pre>
+<p>The original jQuery demo remains at <a href="index.html">index.html</a>.</p>
+<script type="module">
+const form = document.querySelector('form');
+form.addEventListener('submit', event => {
+  event.preventDefault();
+  document.querySelector('#result').textContent = JSON.stringify(Object.fromEntries(new FormData(form)), null, 2);
+});
+form.addEventListener('change', event => {
+  document.querySelector('#result').textContent = event.target.name + ': ' + event.target.value;
+});
+</script>
+</html>
