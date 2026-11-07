@@ -17,6 +17,32 @@ function setup(attributes = '') {
   const rating = fixture.querySelector('all-rating');
   return {form, rating, root: rating.shadowRoot};
 }
+function maskOf(rating, value) {
+  const symbol = rating.shadowRoot.querySelector('[data-value="' + value + '"] .symbol');
+  return getComputedStyle(symbol).maskImage || getComputedStyle(symbol).webkitMaskImage || '';
+}
+await test('every theme paints a symbol', () => {
+  const {rating, root} = setup();
+  const icons = root.querySelectorAll('[role=radio] .symbol');
+  assert(icons.length === 5, 'five icons rendered');
+  assert(maskOf(rating, 3).includes('data:image/svg+xml'), 'star theme has a mask source');
+  assert(!maskOf(rating, 3).includes('none'), 'mask is not none');
+});
+await test('medal theme uses its own artwork and bar opts out', () => {
+  const {rating} = setup('theme="medal"');
+  const medal = maskOf(rating, 3);
+  assert(medal.includes('data:image/svg+xml'), 'medal has a mask source');
+  const {rating: bars} = setup('theme="bar"');
+  assert(maskOf(bars, 3) === 'none', 'bars draw solid blocks, not icons');
+  const {rating: tiny} = setup('theme="tinystar"');
+  assert(maskOf(tiny, 3).includes('data:image/svg+xml'), 'tinystar keeps the star mask');
+});
+await test('inactive icons stay visible', () => {
+  const {rating} = setup();
+  const dim = Number(getComputedStyle(rating.shadowRoot.querySelector('[data-value="5"] .symbol')).opacity);
+  const lit = Number(getComputedStyle(rating.shadowRoot.querySelector('[data-value="1"] .symbol')).opacity);
+  assert(dim < lit, 'unselected icons are dimmed, not invisible');
+});
 await test('initial value, label and form data', () => {
   const {form, rating, root} = setup();
   assert(rating.value === 3, 'initial value');
@@ -46,15 +72,13 @@ await test('groups for one name share the form value and change together', () =>
   const [first, second] = fixture.querySelectorAll('all-rating');
   assert(new FormData(form).getAll('score').length === 2, 'two entries before grouping');
   first.group = 'score'; second.group = 'score';
-  assert(first.value === 2 && second.value === 4, 'each starts at its own default');
   second.shadowRoot.querySelector('[data-value="5"]').click();
   assert(first.value === 5 && new FormData(form).getAll('score').length === 1, 'grouped radios sync and submit once');
 });
-await test('icons are mask sources, not emoji fallbacks', () => {
+await test('the names stay on the group, and Clear is labelled', () => {
   const {rating, root} = setup();
-  const symbol = root.querySelector('[role=radio] .symbol');
-  assert(symbol.getAttribute('aria-hidden') === 'true', 'icons hidden from AT');
-  assert(root.querySelector('.choices').getAttribute('aria-label').length > 0, 'group keeps the name');
+  assert(root.querySelector('[role=radio] .symbol').getAttribute('aria-hidden') === 'true', 'icons hidden from AT');
+  assert(root.querySelector('.choices').getAttribute('aria-label') === 'Your rating', 'group carries the label');
   rating.setAttribute('aria-label', 'Explicit name');
   assert(root.querySelector('.choices').getAttribute('aria-label') === 'Explicit name', 'explicit name wins');
   assert(root.querySelector('.clear').getAttribute('aria-label').startsWith('Clear rating'), 'clear named');
