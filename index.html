@@ -67,6 +67,7 @@ footer { margin-top: 3rem; opacity: .8; font-size: .95rem; }
     <tr><td><code>value</code></td><td>Default rating; reset restores it</td></tr>
     <tr><td><code>max</code></td><td>Scale size, 1&ndash;100 (default 5)</td></tr>
     <tr><td><code>name</code></td><td>Key used in form submission</td></tr>
+    <tr><td><code>group</code></td><td>Shared name that makes several controls behave as one</td></tr>
     <tr><td><code>theme</code></td><td>star, tinystar, bar, or medal</td></tr>
     <tr><td><code>required</code></td><td>Rejects a zero rating on submit</td></tr>
     <tr><td><code>disabled</code>, <code>readonly</code></td><td>Block editing; disabled also blocks submission</td></tr>
@@ -75,7 +76,7 @@ footer { margin-top: 3rem; opacity: .8; font-size: .95rem; }
   </table>
 </section>
 <footer>
-  <p>User input fires <code>input</code> then <code>change</code> events. The untouched <a href="jquery-demo.html">jQuery plugin demo</a> is still available, and the <a href="README.md">README</a> covers the API and migration notes.</p>
+  <p>User input fires <code>input</code> then <code>change</code> events. The <a href="README.md">README</a> covers the API, styling and test notes, and <a href="tests/web-component.html">the browser tests</a> report PASS or FAIL on the page.</p>
 </footer>
 <script type="module">
 const form = document.querySelector('#demo');
