@@ -23,6 +23,7 @@ const style = `
   button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
   [role=radio] { font-size: var(--rating-size); line-height: 1; }
   [data-active] { color: var(--rating-active); }
+  [role=radio]:not([data-active]) .symbol { opacity: .45; }
   button:disabled, [aria-readonly=true] button { cursor: default; }
   [aria-disabled=true] { opacity: .5; }
   .symbol { display: block; background: currentColor;
@@ -30,11 +31,12 @@ const style = `
     mask-position: center; -webkit-mask-position: center;
     mask-size: contain; -webkit-mask-size: contain; }
   :host(:not([theme=tinystar])) [role=radio] .symbol { width: var(--rating-size); height: var(--rating-size); }
-  [role=radio] .symbol { mask-image: var(--symbol-star); -webkit-mask-image: var(--symbol-star); }
-  :host([theme=medal]) [role=radio] .symbol { mask-image: var(--symbol-medal); -webkit-mask-image: var(--symbol-medal); }
+  [role=radio] .symbol { mask-image: var(--symbol-icon, var(--symbol-star));
+    -webkit-mask-image: var(--symbol-icon, var(--symbol-star)); }
   :host([theme=tinystar]) [role=radio] .symbol { width: 1rem; height: 1rem; }
-  :host([theme=bar]) [role=radio] .symbol { width: .7rem; height: 1.3rem;
-    mask-image: none; -webkit-mask-image: none; }
+  :host([theme=medal]) { --symbol-icon: var(--symbol-medal); }
+  :host([theme=bar]) { --symbol-icon: none; }
+  :host([theme=bar]) [role=radio] .symbol { width: .7rem; height: 1.3rem; }
   .clear { margin-left: .35rem; color: var(--rating-inactive); text-decoration: underline; }
   .status { display: block; font: .85rem/1.5 system-ui, sans-serif; }
   @media (forced-colors: active) {
