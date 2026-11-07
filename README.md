@@ -1,9 +1,8 @@
 # allRating
 
-Two implementations live here:
+A dependency-free, form-associated rating web component (version 1.0.0) with nothing else attached: no jQuery, no image sprites, no build step, no global CSS.
 
-- **all-rating**, a dependency-free, form-associated web component (version 1.0.0). The API, styling and migration notes are below, and the [live demo](index.html) on the home page shows every theme.
-- **The original allRating jQuery plugin**, unchanged in js/jquery.allRating.js with its demo in jquery-demo.html.
+The [live demo](index.html) is the home page of this repository's GitHub Pages site and shows every theme and state.
 
 ## Usage
 
@@ -25,7 +24,7 @@ No package installation, bundler, jQuery, image sprites, or external CSS is requ
 - value: the default integer rating in markup, initially 0. The value property holds the live numeric value. Assigning the property is silent and does not change the reset default.
 - max: integer from 1 to 100, default 5. Values are rounded and clamped to 0..max. Invalid scales fall back to 5.
 - name: key used by native form submission and FormData. Zero is submitted as "0"; an unnamed control is not submitted.
-- group: optional name shared by several controls that should behave as one radio group. Controls with the same group share a value, sync on change, and submit a single form entry; the form value is the largest rating in the group.
+- group: optional name shared by several controls that should behave as one radio group. Controls with the same group share a value, sync on change, and submit a single form entry.
 - disabled: prevents editing and submission, including disabled parent fieldsets.
 - readonly: prevents editing but preserves submission. The corresponding property is readOnly.
 - required: a nonzero rating is required unless readonly.
@@ -51,12 +50,6 @@ Network submission is left to the application. The component never posts ratings
 
 Set --rating-active, --rating-inactive, --rating-size, and --rating-gap on all-rating. The icon masks are exposed as --symbol-star and --symbol-medal if you want to swap the artwork. Shadow parts are control, rating, active, clear, and label. There is no global stylesheet or host-page reset.
 
-## Migration
-
-Replace each select or radio group enhanced by .allRating() with an all-rating element, carrying over its name, selected numeric value, disabled state, and theme. Convert option descriptions into the labels array. Replace onClickEvent callbacks with standard change listeners. This initial component API supports integer scales rather than arbitrary select/radio option values, and does not automatically upgrade old inputs. Do not keep the old named input alongside the new component or the form will submit duplicate fields. Existing pages may continue to use the original plugin independently.
-
-The old cancel action restored the initial selection; the new Clear action sets 0. Use form.reset() to restore defaults. There is no automatic AJAX submission, showHover setting, existingRatingOnEdit setting, or legacy CSS class configuration.
-
 ## Tests
 
 ```sh
@@ -67,11 +60,11 @@ That runs the dependency-free normalization tests in tests/rating-scale.test.mjs
 
 ## Project files
 
-- `js/all-rating.js` and `js/rating-scale.js`: the component.
-- `index.html`: the component demo, served as the site home page; `jquery-demo.html`: the original jQuery demo (unchanged, including its insecure asset URLs); `web-component.html`: a redirect to the home page.
+- `js/all-rating.js`, `js/rating-scale.js`: the component.
+- `index.html`: the demo, served as the site home page; `web-component.html`: a redirect to the home page.
 - `tests/`: Node and browser tests.
 - `CHANGELOG.md`, `LICENSE.web-component`, `package.json`.
 
 ## Attribution
 
-Based on allRating by Dan Dunford, copyright 2011 Vantage Technologies. The original source includes MIT/GPL licensing notices. This rewrite is distributed under the MIT permission in that source; see LICENSE.web-component. Original source notices are retained in the untouched legacy files.
+Based on the original allRating concept and source by Dan Dunford, copyright 2011 Vantage Technologies. The original source carried MIT/GPL licensing notices; this rewrite is distributed under the MIT permission in that source, see LICENSE.web-component.
